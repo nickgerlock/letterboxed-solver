@@ -1,5 +1,5 @@
-import { AllBoardLetters, BoardLetter, State, getCurrentLetter, hasWon, selectLetter, submitSelection } from './state';
-import { checkSelectionLeadsToWord, checkSelectionWordIsValid } from './validity';
+import { AllBoardLetters, BoardLetter, State, getCurrentLetter, hasWon, selectLetter, submitSelection } from './state.js';
+import { checkSelectionLeadsToWord, checkSelectionWordIsValid } from './validity.js';
 
 export function solve(state: State, allowedWordsLeft: number = 6): State[] {
   if (allowedWordsLeft === 0) return [];

@@ -133,7 +133,7 @@ export function hasLost(state: State) {
 
 export function getWord(board: Board, move: BoardLetter[]): string {
   return move.map(boardLetter => {
-    return board[boardLetter[0]][boardLetter[1]];
+    return board[boardLetter.side][boardLetter.index];
   }).join("");
 }
 

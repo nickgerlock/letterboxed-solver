@@ -1,0 +1,29 @@
+{
+  "name": "letterboxed-solver",
+  "version": "1.0.0",
+  "description": "Solver for Letterboxed, the NYT word game.",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "main": "tsc && node --loader ts-node/esm ./src/index.ts",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nickgerlock/letterboxed-solver.git"
+  },
+  "author": "Nick Gerlock",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nickgerlock/letterboxed-solver/issues"
+  },
+  "homepage": "https://github.com/nickgerlock/letterboxed-solver#readme",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "ts-node": "^10.9.1"
+  },
+  "dependencies": {
+    "mnemonist": "^0.39.5",
+    "word-list": "^3.1.0"
+  }
+}

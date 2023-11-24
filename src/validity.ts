@@ -1,10 +1,8 @@
 // Validity
 // -----------------------
 
-import { Board, BoardLetter, Side, State, getWord } from './state';
+import { Board, BoardLetter, Side, State, getCurrentLetter, getWord } from './state.js';
 
-// TODO: it could be cool to create a branded type called "ValidMove".
-//   - Would need to redefine "Move" to be a tuple of State and Move to do so.
 // export function checkMoveValid(state: State): MoveValidity {
 //   const conditions: ValidityCondition[] = [
 //     [() => checkSelectionStartsWithLastLetter(state), "INVALID_INVALID_STARTING_LETTER"],
@@ -26,19 +24,27 @@ import { Board, BoardLetter, Side, State, getWord } from './state';
 //   return ValidMoveValidity;
 // }
 
-export function checkSelectionWordIsValid(state: State) {
+export function checkLetterIsValidSelection(state: State, letter: BoardLetter): boolean {
+  const currentLetter = getCurrentLetter(state);
+  if (!currentLetter) return true;
+
+  return currentLetter.side === letter.side;
+}
+
+export function checkSelectionWordIsValid(state: State): boolean {
   return checkSelectionIsWord(state) && checkSelectionWordLengthValid(state);
 }
 
 // Note: will want to use a Trie, so that, at any given partial move,
 // we can check each next candidate letter to see if any valid word contains it.
 // TODO STUB
-export function isValidPrefix(letters: string): boolean {
+// TODO: make sure to check that the candidate word is at least 3 letters long
+export function isPrefixOfWord(letters: string): boolean {
   return true;
 }
 
 export function checkSelectionLeadsToWord(state: State): boolean {
-  return isValidPrefix(getWord(state.board, state.selectedLetters));
+  return isPrefixOfWord(getWord(state.board, state.selectedLetters));
 }
 
 function checkSelectionIsWord(state: State): boolean {
@@ -62,7 +68,7 @@ type MoveValidity = typeof ValidMoveValidity | {
 };
 
 function checkLettersEqual(a: BoardLetter, b: BoardLetter): boolean {
-  return a[0] === b[0] && a[1] === b[1];
+  return a.side === b.side && a.index === b.index;
 }
 
 function checkWordIsValid(word: string): boolean {
@@ -77,7 +83,7 @@ function checkSelectionWordLengthValid(state: State): boolean {
 function checkSelectionContainsNoRepeatedSides(state: State): boolean {
   let lastSide: Side;
   return state.selectedLetters.every(boardLetter => {
-    const side = boardLetter[0];
+    const side = boardLetter.side;
     const sidesDifferent = side !== lastSide;
     lastSide = side;
     return sidesDifferent;
