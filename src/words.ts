@@ -1,13 +1,12 @@
-import mnemonist from 'mnemonist';
-const { Trie } = mnemonist;
+import { SearchTrie, buildCharacterTrie } from 'search-trie';
 
-// import Trie from 'mnemonist/trie.js'
 import { readFile } from 'node:fs/promises';
 import wordsListPath from 'word-list';
+import { AllBoardLetters, Board, Letter, getAdjacentLetters, getLetters } from './state.js';
 
 let wordList: string[];
 let wordSet: Set<string>;
-let wordTrie: any; // FUCK this package!!!
+let wordTrie: SearchTrie<string, undefined>
 
 export async function getWordList(): Promise<string[]> {
   if (!wordList) {
@@ -25,7 +24,7 @@ export async function getWordSet(): Promise<Set<string>> {
   return wordSet;
 }
 
-export async function getWordTrie(): Promise<any> {
+export async function getWordTrie(): Promise<SearchTrie<string, undefined>> {
   if (!wordTrie) {
     await initializeWordList();
   }
@@ -34,7 +33,10 @@ export async function getWordTrie(): Promise<any> {
 }
 
 async function initializeWordList() {
-  wordList = (await readFile(wordsListPath, 'utf8')).split('\n');
+  wordList = (await readFile(wordsListPath, 'utf8')).toUpperCase().split('\n').sort((a, b) => {
+    // Sort from longest to shortest for efficiency.
+    return b.length - a.length;
+  });
   wordSet = new Set(wordList);
-  wordTrie = Trie.from(wordList);
+  wordTrie = buildCharacterTrie(wordList.map(word => ({key: word, value: undefined})));
 }

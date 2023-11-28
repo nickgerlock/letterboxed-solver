@@ -2,6 +2,9 @@
 // -----------------------
 
 import { Board, BoardLetter, Side, State, getCurrentLetter, getWord } from './state.js';
+import { getWordTrie } from './words.js';
+
+const wordTrie = await getWordTrie();
 
 // export function checkMoveValid(state: State): MoveValidity {
 //   const conditions: ValidityCondition[] = [
@@ -28,7 +31,7 @@ export function checkLetterIsValidSelection(state: State, letter: BoardLetter): 
   const currentLetter = getCurrentLetter(state);
   if (!currentLetter) return true;
 
-  return currentLetter.side === letter.side;
+  return currentLetter.side !== letter.side;
 }
 
 export function checkSelectionWordIsValid(state: State): boolean {
@@ -37,14 +40,13 @@ export function checkSelectionWordIsValid(state: State): boolean {
 
 // Note: will want to use a Trie, so that, at any given partial move,
 // we can check each next candidate letter to see if any valid word contains it.
-// TODO STUB
-// TODO: make sure to check that the candidate word is at least 3 letters long
 export function isPrefixOfWord(letters: string): boolean {
-  return true;
+  return wordTrie.has(letters);
 }
 
 export function checkSelectionLeadsToWord(state: State): boolean {
-  return isPrefixOfWord(getWord(state.board, state.selectedLetters));
+  const prefix = getWord(state.board, state.selectedLetters);
+  return isPrefixOfWord(prefix);
 }
 
 function checkSelectionIsWord(state: State): boolean {
@@ -88,14 +90,6 @@ function checkSelectionContainsNoRepeatedSides(state: State): boolean {
     lastSide = side;
     return sidesDifferent;
   });
-}
-
-function checkSelectionStartsWithLastLetter(state: State): boolean {
-  if (state.selectedWords.length === 0) return true;
-
-  const lastWord = state.selectedWords[state.selectedWords.length - 1];
-  const lastLetter = lastWord[lastWord.length - 1];
-  return checkLettersEqual(lastLetter, state.selectedLetters[0]);
 }
 
 type ValidityCondition = [(...args: any) => boolean, typeof InvalidMoveStatuses[number]];

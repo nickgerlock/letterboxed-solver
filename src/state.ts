@@ -1,3 +1,5 @@
+import { checkLetterIsValidSelection, checkSelectionWordIsValid } from './validity.js'
+
 export type State = {
   readonly board: Board
   // TODO: invariant: last letter of word i must be first letter of word i+1.
@@ -13,9 +15,9 @@ export type Side = typeof Sides[number];
 // TODO: enforce validity of number? (should be between 0 and 2).
 export type BoardLetter = {
   side: Side,
-  index: number,
+  index: 0 | 1 | 2,
 };
-export type ShortBoardLetter = [Side, number];
+export type ShortBoardLetter = [Side, 0 | 1 | 2];
 export type LetterPath = BoardLetter[];
 
 const LETTERS_PER_SIDE = 3; // TODO: can we make this less redundant?
@@ -48,7 +50,7 @@ const Letters = [
   "Y",
   "Z",
 ] as const;
-type Letter = typeof Letters[number];
+export type Letter = typeof Letters[number];
 type BoardSide = [Letter, Letter, Letter];
 
 const Sides = ["left", "top", "right", "bottom"] as const;
@@ -63,10 +65,6 @@ export const AllBoardLetters: BoardLetter[] = Sides.map(side => {
 // State
 // ------------------
 
-export function newMove(move: ShortBoardLetter[]): BoardLetter[] {
-  return move.map(shortBoardLetter => ({side: shortBoardLetter[0], index: shortBoardLetter[1]}));
-}
-
 export function makeNewGame(board: Board): State {
   return {
     board,
@@ -77,7 +75,11 @@ export function makeNewGame(board: Board): State {
 }
 
 // TODO: validate selected letter?
-export function selectLetter(state: State, letter: BoardLetter): State {
+export function selectLetter(state: State, letter: BoardLetter): State | undefined {
+  if (!checkLetterIsValidSelection(state, letter)) {
+    return undefined;
+  }
+
   return {
     board: state.board,
     selectedWords: state.selectedWords,
@@ -96,22 +98,21 @@ export function selectLetters(state: State, letters: BoardLetter[]): State {
   }
 }
 
-// NOTE: Assumes move is valid.
-export function applyMove(state: State, move: BoardLetter[]): State {
-  return {
-    board: state.board,
-    lettersUsed: new Set([...state.lettersUsed, ...new Set(move)]),
-    selectedWords: [...state.selectedWords, move],
-    selectedLetters: [],
-  };
-}
+export function submitSelection(state: State): State | undefined {
+  const lastLetter = state.selectedLetters.at(-1);
+  if (!lastLetter) {
+    return undefined;
+  }
 
-export function submitSelection(state: State): State {
+  if (!checkSelectionWordIsValid(state)) {
+    return undefined;
+  }
+
   return {
     board: state.board,
     lettersUsed: new Set([...state.lettersUsed, ...new Set(state.selectedLetters)]),
     selectedWords: [...state.selectedWords, state.selectedLetters],
-    selectedLetters: [],
+    selectedLetters: [lastLetter],
   };
 }
 
@@ -142,15 +143,47 @@ export function checkSelectionIncomplete(state: State) {
 }
 
 export function getCurrentLetter(state: State): BoardLetter | undefined {
-  let currentLetter: BoardLetter | undefined = undefined;
-  if (state.selectedLetters.length > 0) {
-    currentLetter = state.selectedLetters[state.selectedLetters.length - 1];
-  }
+  return state.selectedLetters.at(-1);
+}
 
-  if (state.selectedWords.length) {
-    const lastWord = state.selectedWords[state.selectedWords.length - 1];
-    currentLetter = lastWord[lastWord.length - 1];
-  }
+export function getLetter(board: Board, boardLetter: BoardLetter): Letter {
+  return board[boardLetter.side][boardLetter.index];
+}
 
-  return currentLetter;
+export function getLetters(board: Board, boardLetters?: BoardLetter[]): Letter[] {
+  return (boardLetters ?? AllBoardLetters).map(boardLetter => getLetter(board, boardLetter));
+}
+
+export function print(state: State): string {
+  const board = state.board;
+  const boardString = printBoard(board);
+  const lettersUsed = Array.from(state.lettersUsed).map(boardLetter => getLetter(board, boardLetter));
+  const lettersLeft = AllBoardLetters
+    .filter(boardLetter => !state.lettersUsed.has(boardLetter))
+    .map(boardLetter => getLetter(board, boardLetter));
+  const wordsUsed = state.selectedWords.map(letterPath => getWord(board, letterPath));
+  
+  return [
+    wordsUsed,
+    boardString,
+    `Used: ${lettersUsed}`,
+    `Unused: ${lettersLeft}`,
+  ].join("\n");
+}
+
+export function printBoard(board: Board): string {
+  const rows = [
+    [" ", board.top[0], board.top[1], board.top[2], " "],
+    [board.left[2], " ", " ", " ", board.right[2]],
+    [board.left[1], " ", " ", " ", board.right[1]],
+    [board.left[0], " ", " ", " ", board.right[0]],
+    [" ", board.bottom[0], board.bottom[1], board.bottom[2], " "],
+  ];
+
+  return rows.map(row => row.join(" ")).join("\n");
+}
+
+// "Adjacent" means that two letters can be viably connected.
+export function getAdjacentLetters(board: Board, boardLetter: BoardLetter): BoardLetter[] {
+  return AllBoardLetters.filter(candidateBoardLetter => candidateBoardLetter.side !== boardLetter.side);
 }
