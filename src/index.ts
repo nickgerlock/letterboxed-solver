@@ -1,30 +1,21 @@
-import { getNextWordsByLetterMap, solve, whoaSolve } from './letter_boxed_solver.js';
-import { getAdjacentLetters, getLetters, makeNewGame, print } from './state.js';
-import { getAvailableWords } from './find_words.js';
-import { getWordTrie, getWordList, getWordSet } from './words.js';
-
-console.log("loading")
-const wordTrie = await getWordTrie();
-const wordSet = await getWordSet();
+import { findSolutions } from './letter_boxed_solver.js';
+import { makeNewGame } from './state.js';
 
 const testGame = makeNewGame({
   // left: ["H", "T", "A"],
   // top: ["R", "P", "I"],
   // right: ["E", "O", "U"],
   // bottom: ["G", "L", "F"],
-  left: ["A", "C", "O"],
-  top: ["P", "L", "W"],
-  right: ["I", "E", "B"],
-  bottom: ["S", "T", "H"],
+  top:    ["Z", "L", "G"],
+  left:   ["V", "N", "I"],
+  right:  ["E", "M", "A"],
+  bottom: ["O", "Y", "R"],
 });
 
-
-// console.log(print(testGame));
-const allAvailableWords = getAvailableWords(testGame.board, await getWordList())
-const nextWordsByLetterMap = getNextWordsByLetterMap(allAvailableWords);
-
-const solution = whoaSolve(new Set(getLetters(testGame.board)), new Set(), undefined, [], new Set(allAvailableWords), nextWordsByLetterMap);
-console.log(solution);
+console.log("Calculating...");
+const solutions = await findSolutions(testGame.board, 1000, 2, []);
+console.log(solutions);
+console.log(`Found ${solutions.length} solutions`);
 
 // console.log("done")
 

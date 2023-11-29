@@ -1,56 +1,49 @@
-import { AllBoardLetters, Board, BoardLetter, Letter, LetterPath, State, getCurrentLetter, getLetter, hasWon, selectLetter, submitSelection } from './state.js';
+import { getAvailableWords } from './find_words.js';
+import { AllBoardLetters, Board, BoardLetter, Letter, LetterPath, State, getCurrentLetter, getLetter, getLetters, hasWon, selectLetter, submitSelection } from './state.js';
 import { isDefined } from './utilities.js';
 import { checkSelectionLeadsToWord, checkSelectionWordIsValid } from './validity.js';
+import { getWordList } from './words.js';
 
-export function solve(state: State, allowedWordsLeft: number = 6): State[] {
-  if (allowedWordsLeft === 0) return [];
+const DEFAULT_NUM_BRANCHES = Infinity;
+const DEFAULT_MAX_WORDS = 2;
 
-  if (hasWon(state)) return [state];
+export async function findSolutions(board: Board, numBranches: number = DEFAULT_NUM_BRANCHES, maxWords: number = DEFAULT_MAX_WORDS, startingWords: string[] = []): Promise<(string[])[]> {
+  const allAvailableWords = getAvailableWords(board, await getWordList());
+  const allAvailableWordsSet = new Set(allAvailableWords);
+  if (startingWords.some(word => !allAvailableWordsSet.has(word))) return [];
 
-  const nextPossibleLetters = getNextPossibleLetters(state);
-  const nextStatesFromAddingLetters = (nextPossibleLetters).map(letter => selectLetter(state, letter)).filter(isDefined);
-  const nextStatesFromSubmittingSelection = [submitSelection(state)].filter(isDefined);
-  const nextStatesAndWordsUsed: [State, number][] = [
-    ...nextStatesFromAddingLetters.map(state => [state, 0] satisfies [State, number]),
-    ...nextStatesFromSubmittingSelection.map(state => [state, 1] satisfies [State, number]),
-  ];
+  const nextWordsByLetterMap = getNextWordsByLetterMap(allAvailableWords);
+  const letters = new Set(getLetters(board));
 
-  return nextStatesAndWordsUsed.map(([state, wordsUsed]) => solve(state, allowedWordsLeft - wordsUsed)).flat();
+  return makeSolve(letters, numBranches, maxWords)(new Set(), undefined, startingWords, allAvailableWordsSet, nextWordsByLetterMap);
 }
 
-const NUM_BRANCHES = Infinity;
-const MAX_WORDS = 2;
+function makeSolve(allLetters: Set<Letter>, numBranches: number, maxWords: number) {
+  const solve = (lettersUsed: Set<Letter>, currentLetter: Letter | undefined, wordsSoFar: string[], availableWords: Set<string>, availableWordsByLetter: Partial<Record<Letter, string[]>>): (string[])[] => {
+    if (lettersUsed.size === allLetters.size) return [wordsSoFar];
 
-export function whoaSolve(allLetters: Set<Letter>, lettersUsed: Set<Letter>, currentLetter: Letter | undefined, wordsSoFar: string[], availableWords: Set<string>, availableWordsByLetter: Partial<Record<Letter, string[]>>): (string[])[] {
-  if (lettersUsed.size === allLetters.size) return [wordsSoFar];
+    if (wordsSoFar.length >= maxWords) return [];
 
-  if (wordsSoFar.length >= MAX_WORDS) return [];
+    const currentlyAvailableWords = (currentLetter ? availableWordsByLetter[currentLetter] : Array.from(availableWords)) || [];
+    const wordsByValue = currentlyAvailableWords.sort((a, b) => getWordValue(lettersUsed, b) - getWordValue(lettersUsed, a));
+    const nextWords = wordsByValue.slice(0, Math.min(wordsByValue.length, numBranches));
 
-  // const nextWordsByLetterMap = getNextWordsByLetterMap(Array.from(availableWords));
-  //   // TODO: this "as string[]" is sinful
-  const currentlyAvailableWords = (currentLetter ? availableWordsByLetter[currentLetter] : Array.from(availableWords)) as string[];
+    return nextWords.map(nextWord => {
+      const nextLetter = nextWord && Array.from(nextWord).at(-1) as Letter;
+      const nextLettersUsed = nextWord && getLettersUsedAfterWord(lettersUsed, nextWord);
 
-  // const currentlyAvailableWords = Array.from(availableWords).filter(word => {
-  //   const firstLetter = word[0];
-  //   return !currentLetter || (firstLetter && firstLetter === currentLetter);
-  // });
+      if (!nextLetter || !nextLetter || !nextLettersUsed) {
+        return [];
+      }
 
-  const wordsByValue = currentlyAvailableWords.sort((a, b) => getWordValue(lettersUsed, b) - getWordValue(lettersUsed, a));
-  const nextWords = wordsByValue.slice(0, Math.min(wordsByValue.length, NUM_BRANCHES));
+      return solve(nextLettersUsed, nextLetter, [...wordsSoFar, nextWord], availableWords, availableWordsByLetter);
+    }).flat();
+  }
 
-  return nextWords.map(nextWord => {
-    const nextLetter = nextWord && Array.from(nextWord).at(-1) as Letter;
-    const nextLettersUsed = nextWord && getLettersUsedAfterWord(lettersUsed, nextWord);
-
-    if (!nextLetter || !nextLetter || !nextLettersUsed) {
-      return [];
-    }
-
-    return whoaSolve(allLetters, nextLettersUsed, nextLetter, [...wordsSoFar, nextWord], availableWords, availableWordsByLetter);
-  }).flat();
+  return solve;
 }
 
-export function getNextWordsByLetterMap(availableWords: string[]): Partial<Record<Letter, string[]>> {
+function getNextWordsByLetterMap(availableWords: string[]): Partial<Record<Letter, string[]>> {
   const wordsByLetter: Partial<Record<Letter, string[]>> = {};
   availableWords.forEach(word => {
     const letter = word[0] as Letter;
@@ -86,18 +79,6 @@ function getLetterToBoardLetterMapping(board: Board): LetterMapping {
 
   return mapping;
 }
-
-// function getWordsBeginningWithCurrentLetter(letter: Letter, availableWords: string[]) {
-//   const currentBoardLetter = getCurrentLetter(state);
-//   if (!currentBoardLetter) return;
-
-//   const currentLetter = getLetter(state.board, currentBoardLetter);
-
-//   return availableWords.filter(word => {
-//     const firstLetter = word[0];
-//     return firstLetter && firstLetter === currentLetter;
-//   });
-// }
 
 function getNextPossibleLetters(state: State): BoardLetter[] {
   const currentSide = getCurrentLetter(state)?.side;
