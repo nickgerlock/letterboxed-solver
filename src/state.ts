@@ -74,6 +74,33 @@ export function makeNewGame(board: Board): State {
   };
 }
 
+export function quickGame(boardString: string): State | undefined {
+  const sides = boardString.split(' ');
+  const [left, top, right, bottom] = sides.map(side => boardSide(side));
+  if (!(left && top && right && bottom)) return;
+
+  return {
+    board: {left, top, right, bottom},
+    lettersUsed: new Set(),
+    selectedWords: [],
+    selectedLetters: [],
+  };
+}
+
+function boardSide(boardSideString: string | undefined): BoardSide | undefined {
+  if (!boardSideString || boardSideString.length !== 3) return;
+
+  const chunks = Array.from(boardSideString);
+  if (!chunks.every(isLetter)) return;
+
+  return chunks as BoardSide;
+}
+
+function isLetter(maybe: string): maybe is Letter {
+  const lettersAsStrings: readonly string[] = Letters;
+  return (lettersAsStrings).includes(maybe);
+}
+
 // TODO: validate selected letter?
 export function selectLetter(state: State, letter: BoardLetter): State | undefined {
   if (!checkLetterIsValidSelection(state, letter)) {
