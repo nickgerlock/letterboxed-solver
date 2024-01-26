@@ -1,11 +1,12 @@
 {
   "name": "letterboxed-solver",
-  "version": "1.0.0",
+  "version": "1.0.6",
   "description": "Solver for Letterboxed, the NYT word game.",
-  "main": "index.ts",
+  "main": "./dist/index.js",
+  "exports": "./dist/index.js",
   "type": "module",
   "scripts": {
-    "main": "tsc && node --loader ts-node/esm ./src/index.ts",
+    "main": "tsc && node --loader ts-node/esm ./src/do_solve.ts",
     "test": "jest"
   },
   "repository": {

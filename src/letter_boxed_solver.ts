@@ -1,7 +1,6 @@
 import { getAvailableWords } from './find_words.js';
 import { AllBoardLetters, Board, BoardLetter, Letter, LetterPath, State, getCurrentLetter, getLetter, getLetters, hasWon, selectLetter, submitSelection } from './state.js';
 import { isDefined } from './utilities.js';
-import { checkSelectionLeadsToWord, checkSelectionWordIsValid } from './validity.js';
 import { getWordList } from './words.js';
 
 const DEFAULT_NUM_BRANCHES = Infinity;
@@ -15,7 +14,10 @@ export async function findSolutions(board: Board, numBranches: number = DEFAULT_
   const nextWordsByLetterMap = getNextWordsByLetterMap(allAvailableWords);
   const letters = new Set(getLetters(board));
 
-  return makeSolve(letters, numBranches, maxWords)(new Set(), undefined, startingWords, allAvailableWordsSet, nextWordsByLetterMap);
+  const lettersUsed = new Set(startingWords.join('')) as Set<Letter>;
+  const currentLetter = startingWords.at(-1)?.at(-1) as Letter | undefined;
+
+  return makeSolve(letters, numBranches, maxWords)(lettersUsed, currentLetter, startingWords, allAvailableWordsSet, nextWordsByLetterMap);
 }
 
 function makeSolve(allLetters: Set<Letter>, numBranches: number, maxWords: number) {

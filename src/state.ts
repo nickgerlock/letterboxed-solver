@@ -75,7 +75,7 @@ export function makeNewGame(board: Board): State {
 }
 
 export function quickGame(boardString: string): State | undefined {
-  const sides = boardString.split(' ');
+  const sides = boardString.toUpperCase().split(' ');
   const [left, top, right, bottom] = sides.map(side => boardSide(side));
   if (!(left && top && right && bottom)) return;
 

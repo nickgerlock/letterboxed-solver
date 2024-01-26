@@ -4,8 +4,6 @@
 import { Board, BoardLetter, Side, State, getCurrentLetter, getWord } from './state.js';
 import { getWordTrie } from './words.js';
 
-const wordTrie = await getWordTrie();
-
 // export function checkMoveValid(state: State): MoveValidity {
 //   const conditions: ValidityCondition[] = [
 //     [() => checkSelectionStartsWithLastLetter(state), "INVALID_INVALID_STARTING_LETTER"],
@@ -40,11 +38,11 @@ export function checkSelectionWordIsValid(state: State): boolean {
 
 // Note: will want to use a Trie, so that, at any given partial move,
 // we can check each next candidate letter to see if any valid word contains it.
-export function isPrefixOfWord(letters: string): boolean {
-  return wordTrie.has(letters);
+export async function isPrefixOfWord(letters: string): Promise<boolean> {
+  return (await getWordTrie()).has(letters);
 }
 
-export function checkSelectionLeadsToWord(state: State): boolean {
+export async function checkSelectionLeadsToWord(state: State): Promise<boolean> {
   const prefix = getWord(state.board, state.selectedLetters);
   return isPrefixOfWord(prefix);
 }
